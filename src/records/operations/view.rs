@@ -7,9 +7,9 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
-    code: u16,
-    message: String,
-    data: HashMap<String, String>
+    pub code: u16,
+    pub message: String,
+    pub data: HashMap<String, String>
 }
 
 #[derive(Deserialize, Debug)]
