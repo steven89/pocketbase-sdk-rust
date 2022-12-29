@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
-    code: u8,
+    code: u16,
     message: String,
     data: HashMap<String, String>
 }
@@ -18,7 +18,7 @@ pub struct PaginatedRecordList<T> {
     pub per_page: u32,
     pub total_items: u32,
     pub total_pages: u32,
-    pub items: Vec<T> 
+    pub items: Vec<T>
 }
 
 #[derive(Deserialize, Debug)]

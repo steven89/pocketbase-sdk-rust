@@ -5,7 +5,7 @@ use std::error;
 use crate::user::UserTypes;
 
 impl Client {
-    pub async fn get(&self, path: String, params: Option<&[(&str, &str)]>) -> 
+    pub async fn get(&self, path: String, params: Option<&[(&str, &str)]>) ->
     Result<Response, Box<dyn error::Error>> {
         match self.base_url.join(path.as_str()) {
             Ok(request_url) => {
@@ -14,25 +14,29 @@ impl Client {
                 let opts_attached = match params {
                     Some(args) => request.query(args),
                     None => request
-                }; 
+                };
 
                 let authed_req = match &self.user {
                     Some(user) => {
-                        match &user.usertype {
-                            UserTypes::User => {
-                                opts_attached.header(
-                                    AUTHORIZATION,
-                                    format!("User {}", user.token)
-                                )
-                            },
-                            UserTypes::Admin => {
-                                opts_attached.header(
-                                    AUTHORIZATION,
-                                    format!("Admin {}", user.token)
-                                )
+                        // match &user.usertype {
+                        //     UserTypes::User => {
+                        //         opts_attached.header(
+                        //             AUTHORIZATION,
+                        //             format!("User {}", user.token)
+                        //         )
+                        //     },
+                        //     UserTypes::Admin => {
+                        //         opts_attached.header(
+                        //             AUTHORIZATION,
+                        //             format!("Admin {}", user.token)
+                        //         )
 
-                            }
-                        }
+                        //     }
+                        // }
+                        opts_attached.header(
+                            AUTHORIZATION,
+                            &user.token
+                        )
                     }
                     None => opts_attached
                 };

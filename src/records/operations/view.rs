@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
-    code: u8,
+    code: u16,
     message: String,
     data: HashMap<String, String>
 }
@@ -26,7 +26,7 @@ pub async fn record<T: DeserializeOwned>(collection: &str, id: &str, client: &Cl
     ).await;
 
     match response {
-        Ok(resp) => { 
+        Ok(resp) => {
             match resp.json::<ViewResponse<T>>().await {
                 Ok(parsed) => Ok(parsed),
                 Err(e) => Err(Box::new(e) as Box<dyn Error>)
