@@ -1,131 +1,68 @@
-use serde::Deserialize;
-use std::collections::HashMap;
-use crate::user::{UserTypes, User};
 use super::Client;
-use std::error::Error;
-use std::fmt;
-
-#[derive(Debug, Clone)]
-struct AuthenticationError;
-
-impl fmt::Display for AuthenticationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Authentication Failed")
-    }
-}
-
-impl Error for AuthenticationError {
-    fn description(&self) -> &str {
-        "Authentication Failed!"
-    }
-}
+use crate::api::{ApiError, RequestError};
+use crate::user::{User, UserTypes};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SuccessAuthResponse {
-    pub token: String
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct FailureAuthResponse {
-    pub code: String,
-    pub message: String,
-    pub data: HashMap<String, String>
+    pub token: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase", untagged)]
 pub enum AuthResponse {
     SuccessAuthResponse(SuccessAuthResponse),
-    FailureAuthResponse(FailureAuthResponse)
+    FailureAuthResponse(ApiError),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PasswordCredentials {
+    identity: String,
+    password: String,
 }
 
 impl Client {
-    pub async fn auth_via_email<'a>(
+    pub async fn auth_via_email(
         &mut self,
-        email: String, password: String,
-        usertype: UserTypes
-    ) -> Result<(), Box<dyn Error>>
-    {
-        let mut credentials: HashMap<String, String> = HashMap::new();
-        credentials.insert(String::from("identity"), email);
-        credentials.insert(String::from("password"), password);
+        email: String,
+        password: String,
+        usertype: UserTypes,
+    ) -> Result<(), RequestError> {
+        let credentials: PasswordCredentials = PasswordCredentials {
+            identity: email,
+            password,
+        };
+        Ok(self.authenticate(&usertype, &credentials).await?)
+    }
 
-        match usertype {
-            UserTypes::User => self.authenticate_user(&credentials).await,
-            UserTypes::Admin => self.authenticate_admin(&credentials).await,
+    fn get_auth_url(&self, user_type: &UserTypes) -> &str {
+        match user_type {
+            UserTypes::User => "collections/users/auth-with-password",
+            UserTypes::Admin => "admins/auth-with-password",
         }
     }
 
-    async fn authenticate_user(&mut self, credentials: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
-        let auth_response = self.post(String::from("collections/users/auth-with-password"), &credentials).await;
-        let parsed_resp   = match auth_response {
-            Ok(response) => {
-                match response.json::<AuthResponse>().await {
-                    Ok(resp) => Ok(resp),
-                    Err(err) => Err(Box::new(err) as Box<dyn Error>)
-                }
-            },
-            Err(err) => Err(err)
-        };
+    async fn authenticate(
+        &mut self,
+        user_type: &UserTypes,
+        credentials: &PasswordCredentials,
+    ) -> Result<(), RequestError> {
+        let auth_response = self
+            .post(String::from(self.get_auth_url(user_type)), &credentials)
+            .await?;
+        let parsed_resp = auth_response.json::<AuthResponse>().await?;
 
         match parsed_resp {
-            Ok(body) => {
-                match body {
-                    AuthResponse::SuccessAuthResponse(response) =>  {
-                        self.user = Some(
-                            User {
-                                usertype: UserTypes::User,
-                                token: response.token
-                            }
-                        );
+            AuthResponse::SuccessAuthResponse(response) => {
+                self.user = Some(User {
+                    usertype: user_type.clone(),
+                    token: response.token,
+                });
 
-                        Ok(())
-                    },
-                    AuthResponse::FailureAuthResponse(_response) => {
-                        Err(Box::new(AuthenticationError))
-                    }
-                }
-            },
-            Err(err) => Err(err)
-        }
-
-    }
-
-    async fn authenticate_admin(&mut self, credentials: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
-        let auth_response = self.post(String::from("admins/auth-with-password"), &credentials).await;
-        let parsed_resp   = match auth_response {
-            Ok(response) => {
-                match response.json::<AuthResponse>().await {
-                    Ok(resp) => Ok(resp),
-                    Err(err) => Err(Box::new(err) as Box<dyn Error>)
-                }
-            },
-            Err(err) => Err(err)
-        };
-
-        match parsed_resp {
-            Ok(body) => {
-                match body {
-                    AuthResponse::SuccessAuthResponse(response) =>  {
-                        self.user = Some(
-                            User {
-                                usertype: UserTypes::Admin,
-                                token: response.token
-                            }
-                        );
-
-                        Ok(())
-                    },
-                    AuthResponse::FailureAuthResponse(_response) => {
-                        Err(Box::new(AuthenticationError))
-                    }
-                }
-            },
-            Err(err) => Err(err)
-
-
+                Ok(())
+            }
+            AuthResponse::FailureAuthResponse(e) => Err(RequestError::Api(e)),
         }
     }
 }

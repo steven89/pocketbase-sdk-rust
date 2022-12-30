@@ -1,15 +1,5 @@
-use std::collections::HashMap;
-use crate::client::Client;
-use std::error::Error;
+use crate::{client::Client, api::{ApiError, RequestError}};
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorResponse {
-    pub code: u16,
-    pub message: String,
-    pub data: HashMap<String, String>
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -24,23 +14,15 @@ pub struct PaginatedRecordList<T> {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase", untagged)]
 pub enum ListResponse<T> {
-    ErrorResponse(ErrorResponse),
+    ErrorResponse(ApiError),
     SuccessResponse(PaginatedRecordList<T>)
 }
 
-pub async fn records<T: DeserializeOwned>(collection: &str, client: &Client) -> Result<ListResponse<T>, Box<dyn Error>> {
-    let list_response = client.get(
-        format!("collections/{}/records", collection),
+pub async fn records<T: DeserializeOwned>(collection: impl Into<String>, client: &Client) -> Result<ListResponse<T>, RequestError> {
+    let response = client.get(
+        format!("collections/{}/records", collection.into()),
         None
-    ).await;
+    ).await?;
 
-    match list_response {
-        Ok(response) => {
-            match response.json::<ListResponse<T>>().await {
-                Ok(parsed) => Ok(parsed),
-                Err(err) => Err(Box::new(err) as Box<dyn Error>)
-            }
-        },
-        Err(err) => Err(err)
-    }
+    Ok(response.json::<ListResponse<T>>().await?)
 }

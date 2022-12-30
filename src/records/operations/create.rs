@@ -1,31 +1,16 @@
-use crate::client::Client;
+use crate::{client::Client, api::{RequestError, ApiError}};
 use serde::{Serialize, Deserialize};
-use std::error::Error;
 use serde::de::DeserializeOwned;
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct FailureResponse {
-    code: String,
-    message: String
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum CreateResponse<T> {
     SuccessResponse(T),
-    FailureResponse(FailureResponse)
+    FailureResponse(ApiError)
 }
 
-pub async fn record<T: Serialize + DeserializeOwned>(collection: &str, changeset: &T, client: &Client) -> Result<CreateResponse<T>, Box<dyn Error>> {
+pub async fn record<T: Serialize + DeserializeOwned>(collection: &str, changeset: &T, client: &Client) -> Result<CreateResponse<T>, RequestError> {
     let url = format!("collections/{}/records", collection);
-    match client.post::<T>(url, &changeset).await {
-        Ok(response) => {
-           match response.json::<T>().await {
-                Ok(parsed) => Ok(CreateResponse::SuccessResponse(parsed)),
-                Err(e) => Err(Box::new(e) as Box<dyn Error>)
-            }
-        },
-        Err(e) => Err(e)
-    }
+    let response = client.post::<T>(url, &changeset).await?;
+    Ok(response.json::<CreateResponse<T>>().await?)
 }
