@@ -9,6 +9,15 @@ pub enum ApiErrorCode {
     Forbidden = 403,
 }
 
+impl From<ApiErrorCode> for http::StatusCode {
+    fn from(value: ApiErrorCode) -> Self {
+        match value {
+            ApiErrorCode::BadRequest => http::StatusCode::BAD_REQUEST,
+            ApiErrorCode::Forbidden => http::StatusCode::FORBIDDEN,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiError {
     pub code: ApiErrorCode,
