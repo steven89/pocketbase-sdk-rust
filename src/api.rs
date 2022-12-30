@@ -11,9 +11,9 @@ pub enum ApiErrorCode {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiError {
-    code: ApiErrorCode,
-    message: String,
-    data: serde_json::Map<String, serde_json::Value>,
+    pub code: ApiErrorCode,
+    pub message: String,
+    pub data: serde_json::Map<String, serde_json::Value>,
 }
 
 impl Display for ApiError {
