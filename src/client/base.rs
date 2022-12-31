@@ -42,7 +42,6 @@ impl Client {
         let request_url = self.base_url.join(path.as_str())?;
         let req_client = reqwest::Client::new();
         let b = serde_json::to_string(body).unwrap();
-        println!("{request_url}: {b}");
         let mut req = req_client
             .post(request_url)
             .header(header::CONTENT_TYPE, "application/json")
