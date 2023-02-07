@@ -24,5 +24,10 @@ pub async fn records<T: DeserializeOwned>(collection: impl Into<String>, client:
         None
     ).await?;
 
-    Ok(response.json::<ListResponse<T>>().await?)
+    let res = response.text().await?;
+    match serde_json::from_str::<ListResponse<T>>(&res) {
+        Ok(r) => Ok(r),
+        Err(e) => Err(RequestError::ParseError(e, res)),
+    }
+    // Ok(response.json::<ListResponse<T>>().await?)
 }

@@ -40,7 +40,8 @@ impl Error for ApiError {}
 pub enum RequestError {
     Url(url::ParseError),
     Reqwest(reqwest::Error),
-    Api(ApiError)
+    Api(ApiError),
+    ParseError(serde_json::Error, String)
 }
 
 impl From<url::ParseError> for RequestError {

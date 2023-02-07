@@ -20,6 +20,10 @@ pub async fn record<T: DeserializeOwned>(
     let response = client
         .get(format!("collections/{}/records/{}", collection.into(), id.into()), None)
         .await?;
-
-    Ok(response.json::<ViewResponse<T>>().await?)
+    let res = response.text().await?;
+    match serde_json::from_str::<ViewResponse<T>>(&res) {
+        Ok(r) => Ok(r),
+        Err(e) => Err(RequestError::ParseError(e, res)),
+    }
+    // Ok(response.json::<ViewResponse<T>>().await?)
 }
