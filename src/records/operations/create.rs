@@ -11,6 +11,6 @@ pub enum CreateResponse<T> {
 
 pub async fn record<T: Serialize + DeserializeOwned>(collection: &str, changeset: &T, client: &Client) -> Result<CreateResponse<T>, RequestError> {
     let url = format!("collections/{}/records", collection);
-    let response = client.post::<T>(url, &changeset).await?;
+    let response = client.post::<T>(url, Some(&changeset)).await?;
     Ok(response.json::<CreateResponse<T>>().await?)
 }

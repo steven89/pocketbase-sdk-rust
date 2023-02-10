@@ -49,7 +49,10 @@ impl Client {
         credentials: &PasswordCredentials,
     ) -> Result<(), RequestError> {
         let auth_response = self
-            .post(String::from(self.get_auth_url(user_type)), &credentials)
+            .post(
+                String::from(self.get_auth_url(user_type)),
+                Some(&credentials),
+            )
             .await?;
         let parsed_resp = auth_response.json::<AuthResponse>().await?;
 
@@ -60,6 +63,25 @@ impl Client {
                     token: response.token,
                 });
 
+                Ok(())
+            }
+            AuthResponse::FailureAuthResponse(e) => Err(RequestError::Api(e)),
+        }
+    }
+
+    pub async fn refresh_auth(&mut self) -> Result<(), RequestError> {
+        let res = self
+            .post::<()>("admins/auth-refresh".to_string(), None)
+            .await?;
+        let parsed_resp = res.json::<AuthResponse>().await?;
+        match parsed_resp {
+            AuthResponse::SuccessAuthResponse(r) => {
+                let mut user = self.user.clone().unwrap_or(User {
+                    usertype: UserTypes::User,
+                    token: "".to_string(),
+                });
+                user.token = r.token;
+                self.user = Some(user);
                 Ok(())
             }
             AuthResponse::FailureAuthResponse(e) => Err(RequestError::Api(e)),

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum ApiErrorCode {
     BadRequest = 400,
     Forbidden = 403,
+    NotFound = 404,
 }
 
 impl From<ApiErrorCode> for http::StatusCode {
@@ -14,6 +15,7 @@ impl From<ApiErrorCode> for http::StatusCode {
         match value {
             ApiErrorCode::BadRequest => http::StatusCode::BAD_REQUEST,
             ApiErrorCode::Forbidden => http::StatusCode::FORBIDDEN,
+            ApiErrorCode::NotFound => http::StatusCode::NOT_FOUND,
         }
     }
 }
@@ -30,6 +32,7 @@ impl Display for ApiError {
         match self.code {
             ApiErrorCode::BadRequest => write!(f, "Bad Request"),
             ApiErrorCode::Forbidden => write!(f, "Forbidden"),
+            ApiErrorCode::NotFound => write!(f, "Not Found"),
         }
     }
 }

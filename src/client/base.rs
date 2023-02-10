@@ -37,16 +37,17 @@ impl Client {
     pub async fn post<T: Serialize + Sized>(
         &self,
         path: String,
-        body: &T,
+        body: Option<&T>,
     ) -> Result<Response, RequestError> {
         let request_url = self.base_url.join(path.as_str())?;
         let req_client = reqwest::Client::new();
-        let b = serde_json::to_string(body).unwrap();
+        // let b = ;
         let mut req = req_client
             .post(request_url)
-            .header(header::CONTENT_TYPE, "application/json")
-            .body(b);
-
+            .header(header::CONTENT_TYPE, "application/json");
+        if let Some(b) = body {
+            req = req.body(serde_json::to_string(b).unwrap());
+        }
         req = self.add_auth(req);
         Ok(req.send().await?)
     }
