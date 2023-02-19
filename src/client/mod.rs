@@ -1,7 +1,7 @@
 mod auth;
 mod base;
 
-use std::error;
+
 use url::Url;
 use crate::user::User;
 
@@ -12,10 +12,10 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new<'a>(raw_url: &'a str) -> Result<Client, Box<dyn error::Error>> {
+    pub fn new(raw_url: &str) -> Result<Client, url::ParseError> {
         match Url::parse(raw_url) {
             Ok(url_object) => Ok(Client { base_url: url_object, user: None }) ,
-            Err(e) => Err(Box::new(e) as Box<dyn error::Error>)
+            Err(e) => Err(e)
         }
     }
 }
