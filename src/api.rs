@@ -2,8 +2,10 @@ use std::error::Error;
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize_repr, Deserialize_repr)]
+#[repr(u16)]
 pub enum ApiErrorCode {
     BadRequest = 400,
     Forbidden = 403,
